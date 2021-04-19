@@ -15,5 +15,10 @@ services:
       - "16686:16686"
     networks: [tracing]
 
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+
 networks:
   tracing:

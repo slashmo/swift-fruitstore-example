@@ -4,6 +4,8 @@ import Lifecycle
 import LifecycleNIOCompat
 import Logging
 import Instrumentation
+import MongoSwift
+import _MongoSwiftConcurrency
 import NIO
 import OpenTelemetry
 import OtlpGRPCSpanExporting
@@ -26,6 +28,14 @@ struct Serve: ParsableCommand {
 
         lifecycle.registerShutdown(label: "eventLoopGroup", .async(eventLoopGroup.shutdownGracefully))
 
+        let mongoClient = try MongoClient(using: eventLoopGroup)
+        let mongoDatabase = mongoClient.db("storage")
+        lifecycle.registerShutdown(label: "mongodb", .eventLoopFuture {
+            mongoClient.close().always { _ in
+                cleanupMongoSwift()
+            }
+        })
+
         let otel = OTel(
             serviceName: Storage.serviceName,
             eventLoopGroup: eventLoopGroup,
@@ -42,7 +52,7 @@ struct Serve: ParsableCommand {
         }
         lifecycle.register(label: "otel", start: .eventLoopFuture(startOTel), shutdown: .eventLoopFuture(otel.shutdown))
 
-        let appService = AppService(eventLoopGroup: eventLoopGroup, logger: logger)
+        let appService = AppService(eventLoopGroup: eventLoopGroup, logger: logger, mongoDatabase: mongoDatabase)
         lifecycle.register(label: "app", start: .async(appService.start), shutdown: .async(appService.shutdown))
 
         lifecycle.start { error in

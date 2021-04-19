@@ -12,9 +12,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", .branch("async")),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "1.0.0-alpha.7"),
-        .package(url: "https://github.com/apple/swift-nio.git", .branch("main")),
+        .package(url: "https://github.com/apple/swift-nio.git", .revision("f6936ae8132e14c64ed971764065e6842358fde0")),
         .package(url: "https://github.com/apple/swift-distributed-tracing.git", .branch("async")),
         .package(url: "https://github.com/slashmo/opentelemetry-swift.git", .branch("main")),
+        .package(url: "https://github.com/slashmo/mongo-swift-driver.git", .branch("tracing")),
     ],
     targets: [
         .executableTarget(
@@ -35,6 +36,8 @@ let package = Package(
         ),
         .target(name: "App", dependencies: [
             .target(name: "WebFramework"),
+            .product(name: "MongoSwift", package: "mongo-swift-driver"),
+            .product(name: "_MongoSwiftConcurrency", package: "mongo-swift-driver"),
         ]),
         .target(
             name: "WebFramework",
